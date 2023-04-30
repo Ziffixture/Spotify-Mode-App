@@ -1,10 +1,9 @@
-// Imports
 import SpotifyWebAPI from "spotify-web-api-node"
 import express from "express"
 import open from "open"
 
 
-// Variables
+
 const SHOW_RAW = true
 const REQUEST_SIZE_LIMIT = 50
 
@@ -17,7 +16,7 @@ const API = new SpotifyWebAPI({
 })
 
 
-// Functions
+
 async function authRoute(request) {
     try {
         const response = await API.authorizationCodeGrant(request.query.code)
@@ -125,8 +124,6 @@ async function main() {
 
 
 
-
-// Setup
 open(API.createAuthorizeURL(["playlist-read-private", "playlist-read-collaborative"]))
 
 app.get("/auth", authRoute)
