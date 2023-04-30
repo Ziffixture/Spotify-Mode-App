@@ -39,12 +39,12 @@ async function authRoute(request) {
     }
 } 
 
-async function exhaustInformation(APICallback) {
+async function exhaustInformation(transform) {
     let information = []
     let index = 0
 
     while (true) {
-        let response = await APICallback({
+        let response = await transform({
             limit: REQUEST_SIZE_LIMIT,
             offset: REQUEST_SIZE_LIMIT * index
         })
