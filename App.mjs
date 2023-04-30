@@ -1,3 +1,11 @@
+/*
+Author:     Ziffix
+Version:    1.0.0
+Date:       23/04/30
+*/
+
+
+
 import SpotifyWebAPI from "spotify-web-api-node"
 import express from "express"
 import open from "open"
@@ -7,22 +15,23 @@ import open from "open"
 const SHOW_RAW = true
 const REQUEST_SIZE_LIMIT = 50
 
+
 const app = express()
 
-const API = new SpotifyWebAPI({
-    clientId:       process.env.CLIENT_ID,
-    clientSecret:   process.env.CLIENT_SECRET,
-    redirectUri:    process.env.REDIRECT_URI,
+const api = new SpotifyWebAPI({
+    clientId: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    redirectUri: process.env.REDIRECT_URI,
 })
 
 
 
 async function authRoute(request) {
     try {
-        const response = await API.authorizationCodeGrant(request.query.code)
+        const response = await api.authorizationCodeGrant(request.query.code)
     
-        API.setAccessToken(response.body.access_token)
-        API.setRefreshToken(response.body.refresh_token)
+        api.setAccessToken(response.body.access_token)
+        api.setRefreshToken(response.body.refresh_token)
     
         await main()
     } catch (error) {
@@ -57,12 +66,12 @@ async function compileAllPlaylistTracks() {
     let allTracks = []
     
     const playlists = await exhaustInformation(options =>
-        API.getUserPlaylists(options)    
+        api.getUserPlaylists(options)    
     )
 
     for (const playlist of playlists) {
         const tracks = await exhaustInformation(options => 
-            API.getPlaylistTracks(playlist.id, options)
+            api.getPlaylistTracks(playlist.id, options)
         )
 
         allTracks.push(...tracks)
@@ -124,7 +133,7 @@ async function main() {
 
 
 
-open(API.createAuthorizeURL(["playlist-read-private", "playlist-read-collaborative"]))
+open(api.createAuthorizeURL(["playlist-read-private", "playlist-read-collaborative"]))
 
 app.get("/auth", authRoute)
 app.listen(3000)
