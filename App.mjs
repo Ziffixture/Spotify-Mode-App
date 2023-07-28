@@ -95,10 +95,8 @@ async function downloadUniqueTracks() {
     }
     
     for (const playlist of playlists) {
-        const filteredTracks = await getAllItems((options) => {
-            api.getPlaylistTracks(playlist.id, options, filterDuplicateTracks)
-        })
-
+        const filteredTracks = await getAllItems((options) => api.getPlaylistTracks(playlist.id, options), filterDuplicateTracks)
+        
         uniqueTracks.push(...filteredTracks)
     }
     
