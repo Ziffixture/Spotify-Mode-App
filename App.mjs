@@ -19,9 +19,9 @@ const REQUEST_SIZE_LIMIT = 50
 const app = express()
 
 const api = new SpotifyWebAPI({
-    clientId: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    redirectUri: process.env.REDIRECT_URI,
+    clientId:        process.env.CLIENT_ID,
+    clientSecret:    process.env.CLIENT_SECRET,
+    redirectUri:     process.env.REDIRECT_URI,
 })
 
 
@@ -31,61 +31,84 @@ async function authRoute(request) {
         const response = await api.authorizationCodeGrant(request.query.code)
     
         api.setAccessToken(response.body.access_token)
-        api.setRefreshToken(response.body.refresh_token)
     
-        await main()
-    } catch (error) {
+        await downloadAndProcessTracks()
+    } 
+    catch (error) {
         console.log(error)
     }
 } 
 
-async function exhaustInformation(transform) {
-    let information = []
+
+/*
+Fetches all items using pagination for a given function from the Spotify Web API Node library.
+
+@param Function method - The function from the Spotify Web API Node library to call.
+@param Function filter - A function to filter the items retrieved by the current pagination.
+
+@return Promise
+*/
+async function getAllItems(method, filter) {
+    let allItems = []
     let index = 0
 
     while (true) {
-        let response = await transform({
-            limit: REQUEST_SIZE_LIMIT,
-            offset: REQUEST_SIZE_LIMIT * index
+        let response = await method.call(api, {
+            limit:     REQUEST_SIZE_LIMIT,
+            offset:    REQUEST_SIZE_LIMIT * index,
         })
 
         response = response.body
 
-        information.push(...response.items)
-    
+        let items = response.items
+        
+        if (filter)
+            items = items.filter(filter)
+
+        allItems.push(...items)
+
         if (response.next)
-            index += 1
+            index++
         else
             break
     } 
 
-    return information
+    return items
 }
 
-async function compileAllPlaylistTracks() {
-    let allTracks = []
+async function downloadUniqueTracks() {
+    const playlists = await getAllItems(api.getUserPlaylists)
     
-    const playlists = await exhaustInformation(options =>
-        api.getUserPlaylists(options)    
-    )
+    const uniqueTracks = []
+    const visitedTracks = {}
 
-    for (const playlist of playlists) {
-        const tracks = await exhaustInformation(options => 
-            api.getPlaylistTracks(playlist.id, options)
-        )
+    const filterDuplicateTracks = (track) => {
+        track = track.track
+        
+        if (visitedTracks[track.id] == undefined && !track.is_local) {
+            visitedTracks[track.id] = true
 
-        allTracks.push(...tracks)
+            return true
+        }
+
+        return false
     }
+    
+    for (const playlist of playlists) {
+        const filteredTracks = await getAllItems((options) => {
+            api.getPlaylistTracks(playlist.id, options, filterDuplicateTracks)
+        })
 
-    return allTracks
+        uniqueTracks.push(...filteredTracks)
+    }
+    
+    return uniqueTracks
 }
 
-async function main() {
+async function downloadAndProcessTracks() {
     try {
-        const tracks = await compileAllPlaylistTracks()
-
-        let tracksVisited = {}
-
+        const tracks = await downloadUniqueTracks()
+        
         let yearTotalLargest = 0
         let yearTotals = {}
         let yearModes = []
@@ -94,14 +117,6 @@ async function main() {
         let increment = 0
 
         for (const {track} of tracks) {
-            if (track.is_local)
-                continue
-
-            if (tracksVisited[track.id] == undefined)
-                tracksVisited[track.id] = true
-            else
-                continue
-
             year = track.album.release_date.split("-")[0]
             increment = (yearTotals[year] || 0) + 1
 
