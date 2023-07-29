@@ -12,7 +12,7 @@ import open from "open"
 
 
 
-const SHOW_RAW = true
+const SHOW_RAW = false
 const REQUEST_SIZE_LIMIT = 50
 
 
@@ -73,7 +73,7 @@ async function getAllItems(method, filter) {
             break
     } 
 
-    return items
+    return allItems
 }
 
 async function downloadUniqueTracks() {
