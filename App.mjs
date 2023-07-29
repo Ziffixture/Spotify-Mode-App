@@ -85,7 +85,7 @@ async function downloadUniqueTracks() {
     const filterDuplicateTracks = (track) => {
         track = track.track
         
-        if (visitedTracks[track.id] == undefined && !track.is_local) {
+        if (visitedTracks[track.id] == undefined) {
             visitedTracks[track.id] = true
 
             return true
@@ -115,6 +115,9 @@ async function downloadAndProcessTracks() {
         let increment = 0
 
         for (const {track} of tracks) {
+            if (track.is_local)
+                continue
+            
             year = track.album.release_date.split("-")[0]
             increment = (yearTotals[year] || 0) + 1
 
